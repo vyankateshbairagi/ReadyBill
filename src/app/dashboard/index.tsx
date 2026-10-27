@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { useAuthStore } from '../../store/authStore';
 import { api, API_BASE_URL } from '../../services/api';
+import { AppNavigation } from '../../components/common';
 
 interface DashboardStats {
   todayRevenue: number;
@@ -221,6 +222,7 @@ export default function DashboardScreen() {
           </View>
         </View>
       </ScrollView>
+      <AppNavigation />
     </SafeAreaView>
   );
 }
