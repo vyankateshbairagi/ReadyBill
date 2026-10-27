@@ -203,11 +203,15 @@ export default function DashboardScreen() {
             <Text style={styles.moduleStatus}>Milestone 06</Text>
           </View>
 
-          <View style={styles.moduleCard}>
+          <TouchableOpacity
+            style={styles.moduleCard}
+            onPress={() => router.push('/products' as any)}
+            activeOpacity={0.7}
+          >
             <Text style={styles.moduleIcon}>📦</Text>
             <Text style={styles.moduleName}>Inventory</Text>
-            <Text style={styles.moduleStatus}>Milestone 04</Text>
-          </View>
+            <Text style={[styles.moduleStatus, { color: '#34D399' }]}>Manage Catalog</Text>
+          </TouchableOpacity>
 
           <View style={styles.moduleCard}>
             <Text style={styles.moduleIcon}>👥</Text>
