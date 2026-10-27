@@ -29,14 +29,19 @@ export default function DashboardScreen() {
   const { user, logout } = useAuthStore();
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentSales, setRecentSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [apiConnected, setApiConnected] = useState<boolean | null>(null);
 
   const fetchDashboardData = async () => {
     try {
-      const response = await api.get('/dashboard');
-      setStats(response.data);
+      const [statsRes, salesRes] = await Promise.all([
+        api.get('/dashboard'),
+        api.get('/dashboard/recent-sales').catch(() => ({ data: [] })),
+      ]);
+      setStats(statsRes.data);
+      setRecentSales(salesRes.data || []);
       setApiConnected(true);
     } catch {
       setApiConnected(false);
@@ -106,6 +111,13 @@ export default function DashboardScreen() {
                 {user?.role || 'USER'}
               </Text>
             </View>
+
+            <TouchableOpacity
+              style={styles.settingsButton}
+              onPress={() => router.push('/settings' as any)}
+            >
+              <Text style={styles.settingsIcon}>⚙️</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
               <Text style={styles.logoutText}>Logout</Text>
@@ -197,11 +209,15 @@ export default function DashboardScreen() {
         {/* Quick Launchpad */}
         <Text style={styles.sectionTitle}>Quick Modules</Text>
         <View style={styles.moduleGrid}>
-          <View style={styles.moduleCard}>
+          <TouchableOpacity
+            style={styles.moduleCard}
+            onPress={() => router.push('/billing' as any)}
+            activeOpacity={0.7}
+          >
             <Text style={styles.moduleIcon}>🧾</Text>
             <Text style={styles.moduleName}>New Bill (POS)</Text>
-            <Text style={styles.moduleStatus}>Milestone 06</Text>
-          </View>
+            <Text style={[styles.moduleStatus, { color: '#60A5FA' }]}>Create Invoices</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.moduleCard}
@@ -213,18 +229,96 @@ export default function DashboardScreen() {
             <Text style={[styles.moduleStatus, { color: '#34D399' }]}>Manage Catalog</Text>
           </TouchableOpacity>
 
-          <View style={styles.moduleCard}>
+          <TouchableOpacity
+            style={styles.moduleCard}
+            onPress={() => router.push('/customers' as any)}
+            activeOpacity={0.7}
+          >
             <Text style={styles.moduleIcon}>👥</Text>
             <Text style={styles.moduleName}>Customer Khata</Text>
-            <Text style={styles.moduleStatus}>Milestone 05</Text>
-          </View>
+            <Text style={[styles.moduleStatus, { color: '#38BDF8' }]}>View Ledger & Due</Text>
+          </TouchableOpacity>
 
-          <View style={styles.moduleCard}>
+          <TouchableOpacity
+            style={styles.moduleCard}
+            onPress={() => router.push('/payments' as any)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.moduleIcon}>💳</Text>
+            <Text style={styles.moduleName}>Payments & Udhari</Text>
+            <Text style={[styles.moduleStatus, { color: '#10B981' }]}>Cash / UPI Collections</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.moduleCard}
+            onPress={() => router.push('/reports' as any)}
+            activeOpacity={0.7}
+          >
             <Text style={styles.moduleIcon}>📊</Text>
-            <Text style={styles.moduleName}>Reports</Text>
-            <Text style={styles.moduleStatus}>Milestone 08</Text>
-          </View>
+            <Text style={styles.moduleName}>Reports & Analytics</Text>
+            <Text style={[styles.moduleStatus, { color: '#F59E0B' }]}>Sales & Top Items</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.moduleCard}
+            onPress={() => router.push('/settings' as any)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.moduleIcon}>⚙️</Text>
+            <Text style={styles.moduleName}>Settings & Staff</Text>
+            <Text style={[styles.moduleStatus, { color: '#A78BFA' }]}>Shop & Roles</Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Live Recent Invoices Feed */}
+        <View style={styles.recentSectionHeader}>
+          <Text style={styles.sectionTitle}>Recent Invoices</Text>
+          <TouchableOpacity onPress={() => router.push('/billing' as any)}>
+            <Text style={styles.viewAllText}>+ New Bill</Text>
+          </TouchableOpacity>
+        </View>
+
+        {recentSales.length === 0 ? (
+          <View style={styles.emptyRecentCard}>
+            <Text style={styles.emptyRecentText}>No sales recorded yet today.</Text>
+            <TouchableOpacity
+              style={styles.createFirstBillBtn}
+              onPress={() => router.push('/billing' as any)}
+            >
+              <Text style={styles.createFirstBillText}>+ Start POS Billing</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.recentList}>
+            {recentSales.slice(0, 5).map((sale) => (
+              <TouchableOpacity
+                key={sale.id}
+                style={styles.recentSaleCard}
+                activeOpacity={0.7}
+                onPress={() => router.push(`/billing/${sale.id}` as any)}
+              >
+                <View style={styles.recentLeft}>
+                  <View style={styles.recentIconBox}>
+                    <Text style={styles.recentIcon}>🧾</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.recentInvoiceNo}>#{sale.invoiceNo}</Text>
+                    <Text style={styles.recentCustomer}>
+                      {sale.customer?.name || 'Walk-in Customer'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.recentRight}>
+                  <Text style={styles.recentAmount}>
+                    ₹{Number(sale.total).toLocaleString('en-IN')}
+                  </Text>
+                  <Text style={styles.recentReceiptLink}>Receipt ❯</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </ScrollView>
       <AppNavigation />
     </SafeAreaView>
@@ -275,6 +369,17 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  settingsButton: {
+    backgroundColor: '#1E293B',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  settingsIcon: {
+    fontSize: 14,
   },
   logoutButton: {
     backgroundColor: '#334155',
@@ -431,5 +536,95 @@ const styles = StyleSheet.create({
     color: '#60A5FA',
     fontWeight: '600',
     marginTop: 4,
+  },
+  recentSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  viewAllText: {
+    color: '#38BDF8',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  emptyRecentCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  emptyRecentText: {
+    color: '#64748B',
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  createFirstBillBtn: {
+    backgroundColor: '#2563EB',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  createFirstBillText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  recentList: {
+    gap: 8,
+  },
+  recentSaleCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  recentLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  recentIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recentIcon: {
+    fontSize: 16,
+  },
+  recentInvoiceNo: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#F8FAFC',
+  },
+  recentCustomer: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 1,
+  },
+  recentRight: {
+    alignItems: 'flex-end',
+  },
+  recentAmount: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#10B981',
+  },
+  recentReceiptLink: {
+    fontSize: 10,
+    color: '#38BDF8',
+    fontWeight: '600',
+    marginTop: 2,
   },
 });

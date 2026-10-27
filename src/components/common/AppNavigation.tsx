@@ -18,9 +18,9 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { name: 'Dashboard', route: '/dashboard', icon: '📊' },
   { name: 'POS Bill', route: '/billing', icon: '🧾' },
-  { name: 'Products', route: '/products', icon: '📦' },
+  { name: 'Inventory', route: '/products', icon: '📦' },
   { name: 'Khata', route: '/customers', icon: '👥' },
-  { name: 'Reports', route: '/reports', icon: '📈' },
+  { name: 'Payments', route: '/payments', icon: '💳' },
 ];
 
 export const AppNavigation: React.FC = () => {
